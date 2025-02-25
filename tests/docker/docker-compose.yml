@@ -11,8 +11,6 @@ services:
         condition: service_started
       elasticsearch:
         condition: service_healthy
-      blazegraph:
-        condition: service_healthy
       postgres:
         condition: service_started
       localstack:
@@ -27,7 +25,7 @@ services:
       - '-c'
       - |
         ln -sf /opt/docker/plugins/disabled/project-deletion.jar /opt/docker/plugins/project-deletion.jar &&
-        /opt/docker/bin/delta-app -Xmx4G -Dapp.projections.cluster.size=${CLUSTER_SIZE}
+        /opt/docker/bin/delta-app -Dapp.projections.cluster.size=${CLUSTER_SIZE}
     ports:
       - 8080:8080
     volumes:
@@ -124,24 +122,13 @@ services:
         limits:
           memory: 4G
 
-  blazegraph:
-    image: bluebrain/blazegraph-nexus:2.1.6-RC-21-jre
-    environment:
-      JAVA_OPTS: "-Dlog4j.configuration=/config/blazegraph/log4j.properties -DjettyXml=/config/blazegraph/jetty.xml -Djava.awt.headless=true -XX:MaxDirectMemorySize=300m -Xms4g -Xmx4g -XX:+UseG1GC"
-    ports:
-      - 9999:9999
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9999/blazegraph/" ]
-      interval: 1s
-      timeout: 2s
-      retries: 60
-    volumes:
-      - ./config:/config
-
   postgres:
     image: library/postgres:17.3
     ports:
       - 5432:5432
+    command: "
+          -c max_locks_per_transaction=512
+          "
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"

@@ -178,7 +178,7 @@ class ElasticSearchPluginModule(priority: Int) extends ModuleDef {
         config.batch,
         config.metricsQuery,
         metricIndex,
-        config.indexingEnabled
+        indexingEnabled = false
       )
   }
 
