@@ -11,6 +11,8 @@ services:
         condition: service_started
       elasticsearch:
         condition: service_healthy
+      blazegraph:
+        condition: service_healthy
       postgres:
         condition: service_started
       localstack:
@@ -19,6 +21,7 @@ services:
       - DELTA_PLUGINS
       - DELTA_EXTERNAL_CONF
       - KAMON_ENABLED
+      - _JAVA_OPTIONS
     image: bluebrain/nexus-delta:latest
     entrypoint:
       - '/bin/bash'
@@ -110,6 +113,7 @@ services:
       xpack.security.enabled: "true"
       ingest.geoip.downloader.enabled: "false"
       ELASTIC_PASSWORD: "password"
+      _JAVA_OPTIONS: ${_JAVA_OPTIONS}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://elastic:password@localhost:9200/" ]
       interval: 1s
@@ -121,6 +125,21 @@ services:
       resources:
         limits:
           memory: 4G
+
+  blazegraph:
+    image: bluebrain/blazegraph-nexus:2.1.6-RC-21-jre
+    environment:
+      JAVA_OPTS: "-Dlog4j.configuration=/config/blazegraph/log4j.properties -DjettyXml=/config/blazegraph/jetty.xml -Djava.awt.headless=true -XX:MaxDirectMemorySize=300m -Xms4g -Xmx4g -XX:+UseG1GC"
+      _JAVA_OPTIONS: ${_JAVA_OPTIONS}
+    ports:
+      - 9999:9999
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9999/blazegraph/" ]
+      interval: 1s
+      timeout: 2s
+      retries: 60
+    volumes:
+      - ./config:/config
 
   postgres:
     image: library/postgres:17.3
